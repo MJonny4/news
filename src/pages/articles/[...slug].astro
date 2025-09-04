@@ -1,0 +1,112 @@
+---
+export async function getStaticPaths() {
+  const articles: any = await Astro.glob('../../articles/*.md');
+  
+  return articles.map((article: any) => {
+    const slug = article.file.split('/').pop()?.replace('.md', '') || '';
+    return {
+      params: { slug },
+      props: { article }
+    };
+  });
+}
+
+// Define the expected shape of frontmatter
+interface Frontmatter {
+  title?: string;
+  source?: string;
+  publishedAt?: string;
+  url?: string;
+  author?: string;
+  keyword?: string;
+  newsType?: string;
+}
+
+interface Article {
+  frontmatter?: Frontmatter;
+  compiledContent: () => string;
+}
+
+const { article } = Astro.props as { article: Article };
+const { title, source, publishedAt, url, author, keyword, newsType } = article?.frontmatter || {};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} - Financial News Hub</title>
+    <style>
+      body { 
+        font-family: system-ui, sans-serif; 
+        max-width: 800px; 
+        margin: 0 auto; 
+        padding: 2rem; 
+        line-height: 1.6;
+      }
+      .header { 
+        border-bottom: 2px solid #007acc; 
+        padding-bottom: 1rem; 
+        margin-bottom: 2rem; 
+      }
+      .meta { 
+        color: #666; 
+        font-size: 0.9rem; 
+        margin: 1rem 0; 
+      }
+      .source-badge { 
+        background: #007acc; 
+        color: white; 
+        padding: 0.3rem 0.6rem; 
+        border-radius: 4px; 
+        font-size: 0.8rem; 
+      }
+      .content { 
+        margin: 2rem 0; 
+      }
+      .back-link { 
+        display: inline-block; 
+        background: #f0f0f0; 
+        padding: 0.5rem 1rem; 
+        text-decoration: none; 
+        color: #333; 
+        border-radius: 4px; 
+        margin-bottom: 2rem;
+      }
+      .external-link {
+        background: #007acc;
+        color: white;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        border-radius: 4px;
+        display: inline-block;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="/" class="back-link">← Back to News Hub</a>
+    
+    <div class="header">
+      <h1>{title}</h1>
+      <div class="meta">
+        <span class="source-badge">{source}</span>
+        {publishedAt && <span> • Published: {publishedAt}</span>}
+        {author && <span> • By: {author}</span>}
+      </div>
+      {keyword && <div class="meta"><strong>Keyword:</strong> {keyword} • <strong>Type:</strong> {newsType}</div>}
+    </div>
+
+    <div class="content">
+      <article set:html={article.compiledContent()} />
+    </div>
+
+    {url && (
+      <a href={url} target="_blank" class="external-link">
+        Read Original Article →
+      </a>
+    )}
+  </body>
+</html>

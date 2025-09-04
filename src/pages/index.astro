@@ -1,16 +1,97 @@
 ---
-
+let allArticles: any = []
+try {
+    allArticles = await Astro.glob('../articles/*.md')
+} catch (e) {
+    allArticles = []
+}
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8' />
+        <link rel='icon' type='image/svg+xml' href='/favicon.svg' />
+        <meta name='viewport' content='width=device-width' />
+        <meta name='generator' content={Astro.generator} />
+        <title>Financial News Hub</title>
+        <style>
+            body {
+                font-family: system-ui, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 2rem;
+            }
+            .article-grid {
+                display: grid;
+                gap: 2rem;
+                margin-top: 2rem;
+            }
+            .article-card {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 1.5rem;
+                background: #f9f9f9;
+            }
+            .article-title {
+                color: #333;
+                text-decoration: none;
+                font-weight: bold;
+            }
+            .article-meta {
+                color: #666;
+                font-size: 0.9rem;
+                margin: 0.5rem 0;
+            }
+            .article-description {
+                color: #555;
+                line-height: 1.6;
+            }
+            .source-badge {
+                background: #007acc;
+                color: white;
+                padding: 0.2rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.8rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>📰 Financial News Hub</h1>
+        <p>Latest news articles from NewsAPI, The Guardian, and Alpha Vantage</p>
+
+        <div class='article-grid'>
+            {
+                allArticles.length > 0 ? (
+                    allArticles.map((article: any) => (
+                        <div class='article-card'>
+                            <h2>
+                                <a href={article.url} target='_blank' class='article-title'>
+                                    {article.frontmatter?.title || 'Untitled'}
+                                </a>
+                            </h2>
+                            <div class='article-meta'>
+                                <span class='source-badge'>{article.frontmatter?.source}</span>
+                                <span> • Published: {article.frontmatter?.publishedAt}</span>
+                                {article.frontmatter?.author && <span> • By: {article.frontmatter.author}</span>}
+                            </div>
+                            <div class='article-description'>
+                                {article.frontmatter?.keyword && (
+                                    <p>
+                                        <strong>Keyword:</strong> {article.frontmatter.keyword}
+                                    </p>
+                                )}
+                                <div set:html={article.compiledContent()} />
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div class='article-card'>
+                        <h2>No Articles Found</h2>
+                        <p>Run the PowerShell script to fetch news articles:</p>
+                        <code>.\Get-NewsArticles.ps1 -Keyword "solana" -ArticleCount 10 -NewsType "financial"</code>
+                    </div>
+                )
+            }
+        </div>
+    </body>
 </html>
