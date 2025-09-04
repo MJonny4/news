@@ -10,8 +10,8 @@ param(
     [string]$NewsType = "general",
     
     [Parameter(Mandatory=$false)]
-    [ValidateRange(1, 100)]
-    [int]$ArticleCount = 5,
+    [ValidateRange(1, 20)]
+    [int]$ArticlesPerSource = 5,
     
     [Parameter(Mandatory=$false)]
     [string]$OutputFolder = ".\src\articles"
@@ -57,11 +57,27 @@ function Clean-TextEncoding {
     return $cleaned
 }
 
+# Function to generate unique ID
+function Get-UniqueArticleId {
+    param([string]$title, [string]$source, [string]$publishedAt)
+    
+    # Create a unique string from title + source + date
+    $uniqueString = "$title-$source-$publishedAt" -replace '[^\w\s-]', '' -replace '\s+', '-'
+    
+    # Generate a short hash
+    $hash = [System.Security.Cryptography.MD5]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($uniqueString))
+    $hashString = [System.BitConverter]::ToString($hash) -replace '-', ''
+    
+    # Return first 8 characters + source prefix
+    return "$($source.ToLower())-$($hashString.Substring(0, 8).ToLower())"
+}
+
 # Function to convert to markdown with frontmatter
 function ConvertTo-MarkdownArticle {
     param(
         [PSCustomObject]$Article,
-        [string]$Source
+        [string]$Source,
+        [string]$ArticleId
     )
     
     # Clean up title and other text fields for proper encoding
@@ -70,6 +86,7 @@ function ConvertTo-MarkdownArticle {
     
     $frontmatter = @"
 ---
+id: "$ArticleId"
 title: "$cleanTitle"
 source: "$Source"
 publishedAt: "$($Article.publishedAt)"
@@ -111,7 +128,7 @@ $cleanContent
 function Get-NewsAPIArticles {
     param([string]$query, [int]$pageSize)
     
-    $sources = if ($NewsType -eq "financial") { "&sources=reuters" } else { "" }
+    $sources = if ($NewsType -eq "financial") { "&sources=bloomberg,reuters,financial-times,the-wall-street-journal" } else { "" }
     $url = "https://newsapi.org/v2/everything?q=$query&pageSize=$pageSize&sortBy=publishedAt&apiKey=$NewsAPIKey&language=en$sources"
     
     try {
@@ -154,7 +171,18 @@ function Get-GuardianArticles {
 function Get-AlphaVantageNews {
     param([string]$query, [int]$limit)
     
-    $url = "https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=$query&limit=$limit&apikey=$AlphaVantageKey"
+    # Map keywords to appropriate topics or tickers
+    $topicOrTicker = switch -Wildcard ($query.ToLower()) {
+        "*bitcoin*" { "tickers=BTC" }
+        "*ethereum*" { "tickers=ETH" }
+        "*solana*" { "topics=cryptocurrency" }
+        "*crypto*" { "topics=cryptocurrency" }
+        "*finance*" { "topics=finance" }
+        "*market*" { "topics=finance" }
+        default { "topics=technology" }
+    }
+    
+    $url = "https://www.alphavantage.co/query?function=NEWS_SENTIMENT&$topicOrTicker&limit=$limit&apikey=$AlphaVantageKey"
     
     try {
         $response = Invoke-RestMethod -Uri $url -Method Get
@@ -176,65 +204,100 @@ function Get-AlphaVantageNews {
 }
 
 # Main execution
-Write-Host "Fetching $ArticleCount articles about '$Keyword' ($NewsType news)..." -ForegroundColor Cyan
+$totalExpectedArticles = if ($NewsType -eq "financial") { $ArticlesPerSource * 3 } else { $ArticlesPerSource * 2 }
+Write-Host "Fetching $ArticlesPerSource articles per source about '$Keyword' ($NewsType news)..." -ForegroundColor Cyan
 
-$allArticles = @()
-
-# Calculate articles per source
-$articlesPerSource = [Math]::Ceiling($ArticleCount / 3)
+# Organize articles by source
+$articlesBySource = @{}
 
 # Fetch from each source
 Write-Host "Fetching from NewsAPI..." -ForegroundColor Yellow
-$newsApiArticles = Get-NewsAPIArticles -query $Keyword -pageSize $articlesPerSource
-$allArticles += $newsApiArticles | ForEach-Object { 
+$newsApiArticles = Get-NewsAPIArticles -query $Keyword -pageSize $ArticlesPerSource
+$articlesBySource["NewsAPI"] = $newsApiArticles | ForEach-Object { 
     $_ | Add-Member -NotePropertyName "source_api" -NotePropertyValue "NewsAPI" -PassThru 
-}
+} | Select-Object -First $ArticlesPerSource
 
 Write-Host "Fetching from The Guardian..." -ForegroundColor Yellow  
-$guardianArticles = Get-GuardianArticles -query $Keyword -pageSize $articlesPerSource
-$allArticles += $guardianArticles | ForEach-Object {
+$guardianArticles = Get-GuardianArticles -query $Keyword -pageSize $ArticlesPerSource
+$articlesBySource["Guardian"] = $guardianArticles | ForEach-Object {
     $_ | Add-Member -NotePropertyName "source_api" -NotePropertyValue "Guardian" -PassThru
-}
+} | Select-Object -First $ArticlesPerSource
 
 if ($NewsType -eq "financial") {
     Write-Host "Fetching from Alpha Vantage..." -ForegroundColor Yellow
-    $alphaArticles = Get-AlphaVantageNews -query $Keyword -limit $articlesPerSource  
-    $allArticles += $alphaArticles | ForEach-Object {
+    $alphaArticles = Get-AlphaVantageNews -query $Keyword -limit $ArticlesPerSource  
+    $articlesBySource["AlphaVantage"] = $alphaArticles | ForEach-Object {
         $_ | Add-Member -NotePropertyName "source_api" -NotePropertyValue "AlphaVantage" -PassThru
+    } | Select-Object -First $ArticlesPerSource
+}
+
+# Combine all articles for overall processing
+$allArticles = @()
+foreach ($source in $articlesBySource.Keys) {
+    $allArticles += $articlesBySource[$source]
+}
+
+Write-Host "Saving $($allArticles.Count) articles to markdown files..." -ForegroundColor Green
+
+# Create separate folders for each source
+foreach ($source in $articlesBySource.Keys) {
+    $sourceFolder = Join-Path $OutputFolder $source.ToLower()
+    if (!(Test-Path $sourceFolder)) {
+        New-Item -ItemType Directory -Path $sourceFolder -Force
     }
 }
 
-# Sort by publication date and take top N
-$topArticles = $allArticles | Sort-Object publishedAt -Descending | Select-Object -First $ArticleCount
-
-Write-Host "Saving $($topArticles.Count) articles to markdown files..." -ForegroundColor Green
-
-foreach ($article in $topArticles) {
-    $safeTitle = if ($article.title) { $article.title } else { "Untitled-$(Get-Date -Format 'yyyyMMdd-HHmmss')" }
-    $fileName = Get-SafeFileName -fileName "$($safeTitle.Substring(0, [Math]::Min(50, $safeTitle.Length)))"
-    $fileName = "$fileName.md"
-    $filePath = Join-Path $OutputFolder $fileName
+# Save articles organized by source
+foreach ($source in $articlesBySource.Keys) {
+    $sourceArticles = $articlesBySource[$source]
+    $sourceFolder = Join-Path $OutputFolder $source.ToLower()
     
-    $markdownContent = ConvertTo-MarkdownArticle -Article $article -Source $article.source_api
-    Set-Content -Path $filePath -Value $markdownContent -Encoding UTF8
+    Write-Host "Saving $($sourceArticles.Count) articles from $source..." -ForegroundColor Green
     
-    Write-Host "Saved: $fileName" -ForegroundColor Green
+    foreach ($article in $sourceArticles) {
+        # Generate unique ID for this article
+        $articleId = Get-UniqueArticleId -title $article.title -source $article.source_api -publishedAt $article.publishedAt
+        
+        # Use ID as filename for cleaner URLs
+        $fileName = "$articleId.md"
+        $filePath = Join-Path $sourceFolder $fileName
+        
+        $markdownContent = ConvertTo-MarkdownArticle -Article $article -Source $article.source_api -ArticleId $articleId
+        Set-Content -Path $filePath -Value $markdownContent -Encoding UTF8
+        
+        Write-Host "Saved: $source/$fileName (ID: $articleId)" -ForegroundColor Green
+    }
 }
 
-Write-Host "`nComplete! $($topArticles.Count) articles saved to $OutputFolder" -ForegroundColor Cyan
-Write-Host "Ready for Astro integration!" -ForegroundColor Magenta
+Write-Host "`nComplete! $($allArticles.Count) articles saved to $OutputFolder" -ForegroundColor Cyan
+Write-Host "Articles organized by source: $($articlesBySource.Keys -join ', ')" -ForegroundColor Magenta
 
-# Generate index file for Astro
+# Generate index file for Astro with source breakdown
+$sourceBreakdown = ""
+foreach ($source in $articlesBySource.Keys) {
+    $sourceArticles = $articlesBySource[$source]
+    $sourceBreakdown += @"
+
+### $source ($($sourceArticles.Count) articles)
+$($sourceArticles | ForEach-Object { 
+    $title = if ($_.title) { $_.title } else { "Untitled" }
+    $articleId = Get-UniqueArticleId -title $_.title -source $_.source_api -publishedAt $_.publishedAt
+    "- [$title]($($source.ToLower())/$articleId.md) (ID: $articleId)"
+} | Out-String)
+"@
+}
+
 $indexContent = @"
 # News Articles - $Keyword
 
 Generated on: $(Get-Date)
 Keyword: **$Keyword**
 News Type: **$NewsType**
-Total Articles: **$($topArticles.Count)**
+Total Articles: **$($allArticles.Count)**
 
-## Articles
-$($topArticles | ForEach-Object { $title = if ($_.title) { $_.title } else { "Untitled" }; "- [$title]($((Get-SafeFileName $title.Substring(0, [Math]::Min(50, $title.Length))).md))" } | Out-String)
+## Articles by Source
+$sourceBreakdown
 "@
 
 Set-Content -Path (Join-Path $OutputFolder "index.md") -Value $indexContent -Encoding UTF8
+Write-Host "Ready for Astro integration!" -ForegroundColor Green
