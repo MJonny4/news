@@ -13,7 +13,7 @@ export class ArticleController {
       const where: any = {};
       
       if (source) {
-        where.source = { name: { contains: source, mode: 'insensitive' } };
+        where.source = { name: { contains: source } };
       }
       
       if (category) {
@@ -21,7 +21,7 @@ export class ArticleController {
       }
       
       if (keyword) {
-        where.keyword = { contains: keyword, mode: 'insensitive' };
+        where.keyword = { contains: keyword };
       }
       
       if (newsType) {
@@ -30,9 +30,9 @@ export class ArticleController {
       
       if (search) {
         where.OR = [
-          { title: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-          { author: { contains: search, mode: 'insensitive' } }
+          { title: { contains: search } },
+          { description: { contains: search } },
+          { author: { contains: search } }
         ];
       }
 
@@ -241,11 +241,11 @@ export class ArticleController {
       const articles = await prisma.article.findMany({
         where: {
           OR: [
-            { title: { contains: q, mode: 'insensitive' } },
-            { description: { contains: q, mode: 'insensitive' } },
-            { content: { contains: q, mode: 'insensitive' } },
-            { author: { contains: q, mode: 'insensitive' } },
-            { keyword: { contains: q, mode: 'insensitive' } }
+            { title: { contains: q } },
+            { description: { contains: q } },
+            { content: { contains: q } },
+            { author: { contains: q } },
+            { keyword: { contains: q } }
           ]
         },
         include: {

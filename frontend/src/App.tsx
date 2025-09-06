@@ -6,6 +6,8 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { FetchJobs } from './pages/FetchJobs';
 import { Articles } from './pages/Articles';
+import { Search } from './pages/Search';
+import { Settings } from './pages/Settings';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -21,14 +23,19 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
+      <Router
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/articles" element={<Articles />} />
-            <Route path="/search" element={<div>Search Page (Coming Soon)</div>} />
+            <Route path="/search" element={<Search />} />
             <Route path="/fetch" element={<FetchJobs />} />
-            <Route path="/settings" element={<div>Settings Page (Coming Soon)</div>} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </Layout>
       </Router>

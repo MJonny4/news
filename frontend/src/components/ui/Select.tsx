@@ -15,15 +15,19 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, error, helperText, options, placeholder, ...props }, ref) => {
+  ({ className, label, error, helperText, options, placeholder, id, ...props }, ref) => {
+    const selectId = id || `select-${Math.random().toString(36).substr(2, 9)}`;
+    
     return (
       <div className="space-y-1">
         {label && (
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor={selectId} className="block text-sm font-medium text-gray-700">
             {label}
           </label>
         )}
         <select
+          id={selectId}
+          name={props.name || selectId}
           className={clsx(
             'block w-full rounded-lg border-gray-300 bg-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm',
             error && 'border-red-300 focus:border-red-500 focus:ring-red-500',
