@@ -23,6 +23,8 @@ export const NewsFetchForm: React.FC<NewsFetchFormProps> = ({ onSubmit, loading 
     watch,
     setValue,
     reset,
+    setError,
+    clearErrors,
   } = useForm<CreateFetchJobRequest>({
     defaultValues: {
       keyword: '',
@@ -41,6 +43,11 @@ export const NewsFetchForm: React.FC<NewsFetchFormProps> = ({ onSubmit, loading 
       ? current.filter(id => id !== sourceId)
       : [...current, sourceId];
     setValue('sourceIds', newSelection);
+    
+    // Clear errors when sources are selected
+    if (newSelection.length > 0) {
+      clearErrors('sourceIds');
+    }
   };
 
   // Select all sources
@@ -49,6 +56,7 @@ export const NewsFetchForm: React.FC<NewsFetchFormProps> = ({ onSubmit, loading 
       ?.filter(source => source.isActive)
       .map(source => source.id) || [];
     setValue('sourceIds', allActiveSourceIds);
+    clearErrors('sourceIds');
   };
 
   // Clear all sources
@@ -57,6 +65,16 @@ export const NewsFetchForm: React.FC<NewsFetchFormProps> = ({ onSubmit, loading 
   };
 
   const handleFormSubmit = (data: CreateFetchJobRequest) => {
+    // Validate that at least one source is selected
+    if (!data.sourceIds || data.sourceIds.length === 0) {
+      setError('sourceIds', { 
+        type: 'required', 
+        message: 'Please select at least one source' 
+      });
+      return;
+    }
+    
+    clearErrors('sourceIds');
     onSubmit(data);
     reset();
   };

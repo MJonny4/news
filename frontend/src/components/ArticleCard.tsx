@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  ExternalLinkIcon, 
+  ArrowTopRightOnSquareIcon, 
   ClockIcon, 
   UserIcon,
   TrashIcon 
@@ -105,7 +105,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
                 onClick={() => window.open(article.url, '_blank')}
                 className="text-xs"
               >
-                <ExternalLinkIcon className="w-4 h-4 mr-1" />
+                <ArrowTopRightOnSquareIcon className="w-4 h-4 mr-1" />
                 Original
               </Button>
               

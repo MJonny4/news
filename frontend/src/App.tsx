@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
+import { FetchJobs } from './pages/FetchJobs';
+import { Articles } from './pages/Articles';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -23,9 +25,9 @@ function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/articles" element={<div>Articles Page (Coming Soon)</div>} />
+            <Route path="/articles" element={<Articles />} />
             <Route path="/search" element={<div>Search Page (Coming Soon)</div>} />
-            <Route path="/fetch" element={<div>Fetch Jobs Page (Coming Soon)</div>} />
+            <Route path="/fetch" element={<FetchJobs />} />
             <Route path="/settings" element={<div>Settings Page (Coming Soon)</div>} />
           </Routes>
         </Layout>
