@@ -26,9 +26,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   isDeleting = false 
 }) => {
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardBody>
-        <div className="flex items-start justify-between">
+    <Card className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border hover:border-primary-200">
+      <CardBody className="h-full flex flex-col">
+        <div className="flex items-start justify-between flex-1">
           <div className="flex-1 min-w-0">
             {/* Article Title */}
             <Link 
@@ -98,7 +98,17 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         {/* Actions */}
         {showActions && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-2">
+              <Link to={`/articles/${article.id}`}>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="text-xs"
+                >
+                  Read More
+                </Button>
+              </Link>
+              
               <Button
                 size="sm"
                 variant="outline"

@@ -298,8 +298,12 @@ export class NewsService {
     return sources.map(source => ({
       id: source.id,
       name: source.name,
+      apiKeyName: source.apiKeyName,
+      baseUrl: source.baseUrl,
       isActive: source.isActive,
       articleCount: source._count.articles,
+      createdAt: source.createdAt.toISOString(),
+      updatedAt: source.updatedAt.toISOString(),
     }));
   }
 }

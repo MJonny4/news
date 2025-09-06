@@ -8,9 +8,13 @@ const router = Router();
 // Health check endpoint
 router.get('/health', (req, res) => {
   res.json({ 
-    success: true, 
-    message: 'Financial News Hub API is running',
-    timestamp: new Date().toISOString() 
+    success: true,
+    data: {
+      status: 'healthy',
+      service: 'Financial News Hub API',
+      timestamp: new Date().toISOString()
+    },
+    message: 'Financial News Hub API is running'
   });
 });
 

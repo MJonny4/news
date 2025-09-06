@@ -132,37 +132,72 @@ export const Articles: React.FC = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <Card>
-        <CardBody>
-          <form onSubmit={handleSearch} className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search articles by title, description, author, or keyword..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+      {/* Enhanced Search Bar */}
+      <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-6 border border-primary-100 shadow-sm">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Search News Articles</h2>
+            <p className="text-gray-600 text-sm">Find articles by title, description, author, keyword, or any content</p>
+          </div>
+          
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
+              </div>
+              
+              <Input
+                placeholder="Search articles by title, description, author, or keyword..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-32 py-4 text-lg rounded-xl border-gray-200 focus:border-primary-300 focus:ring-2 focus:ring-primary-100 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200"
+              />
+              
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2 space-x-2">
+                {(searchQuery || filters.search) && (
+                  <Button 
+                    type="button" 
+                    size="sm"
+                    variant="outline" 
+                    onClick={() => {
+                      setSearchQuery('');
+                      updateFilters({ search: undefined });
+                    }}
+                    className="rounded-lg hover:bg-gray-50"
+                  >
+                    Clear
+                  </Button>
+                )}
+                <Button 
+                  type="submit" 
+                  size="sm"
+                  className="rounded-lg bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 font-medium shadow-sm hover:shadow transition-all duration-200"
+                >
+                  Search
+                </Button>
               </div>
             </div>
-            <Button type="submit">Search</Button>
-            {(searchQuery || filters.search) && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setSearchQuery('');
-                  updateFilters({ search: undefined });
-                }}
-              >
-                Clear
-              </Button>
-            )}
+            
+            {/* Search suggestions or quick filters could go here */}
+            <div className="flex flex-wrap items-center gap-2 justify-center text-sm">
+              <span className="text-gray-500 font-medium">Quick searches:</span>
+              {['financial', 'technology', 'market', 'economy'].map((term) => (
+                <button
+                  key={term}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery(term);
+                    updateFilters({ search: term });
+                  }}
+                  className="px-3 py-1 rounded-full bg-white/60 hover:bg-white text-gray-600 hover:text-primary-700 border border-gray-200 hover:border-primary-300 transition-all duration-150 capitalize"
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
           </form>
-        </CardBody>
-      </Card>
+        </div>
+      </div>
 
       {/* Filters Panel */}
       {showFilters && (
