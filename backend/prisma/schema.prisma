@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model NewsSource {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique @db.VarChar(100)
+  apiKeyName String   @map("api_key_name") @db.VarChar(100)
+  baseUrl    String   @map("base_url") @db.VarChar(255)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  articles Article[]
+
+  @@map("news_sources")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(100)
+  slug      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  articles Article[]
+
+  @@map("categories")
+}
+
+enum NewsType {
+  financial
+  general
+  keyword
+}
+
+model Article {
+  id          Int       @id @default(autoincrement())
+  externalId  String?   @map("external_id") @db.VarChar(255)
+  title       String    @db.Text
+  description String?   @db.Text
+  content     String?   @db.LongText
+  url         String    @db.VarChar(500)
+  publishedAt DateTime? @map("published_at")
+  author      String?   @db.VarChar(255)
+  sourceId    Int       @map("source_id")
+  categoryId  Int?      @map("category_id")
+  keyword     String?   @db.VarChar(255)
+  newsType    NewsType  @default(general) @map("news_type")
+  imageUrl    String?   @map("image_url") @db.VarChar(500)
+  isEnhanced  Boolean   @default(false) @map("is_enhanced")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  source   NewsSource @relation(fields: [sourceId], references: [id])
+  category Category?  @relation(fields: [categoryId], references: [id])
+
+  @@unique([externalId, sourceId], name: "unique_article")
+  @@index([publishedAt], name: "idx_published_at")
+  @@index([sourceId, categoryId], name: "idx_source_category")
+  @@index([keyword], name: "idx_keyword")
+  @@index([newsType], name: "idx_news_type")
+  @@map("articles")
+}
+
+enum FetchStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+model FetchJob {
+  id               Int         @id @default(autoincrement())
+  keyword          String      @db.VarChar(255)
+  newsType         NewsType    @default(general) @map("news_type")
+  articlesPerSource Int        @default(5) @map("articles_per_source")
+  sourceIds        Json        @map("source_ids") // Array of source IDs
+  status           FetchStatus @default(pending)
+  articlesFetched  Int         @default(0) @map("articles_fetched")
+  errorMessage     String?     @map("error_message") @db.Text
+  startedAt        DateTime?   @map("started_at")
+  completedAt      DateTime?   @map("completed_at")
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  @@map("fetch_jobs")
+}
+
+model Setting {
+  id           Int      @id @default(autoincrement())
+  settingKey   String   @unique @map("setting_key") @db.VarChar(100)
+  settingValue Json     @map("setting_value")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

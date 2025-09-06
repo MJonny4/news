@@ -1,15 +1,18 @@
 {
-  "name": "astro-news",
-  "type": "module",
-  "version": "0.0.1",
+  "name": "financial-news-hub",
+  "version": "1.0.0",
+  "description": "A modern financial news aggregation platform",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "dev": "concurrently \"cd backend && pnpm dev\" \"cd frontend && pnpm dev\"",
+    "build": "cd backend && pnpm build && cd ../frontend && pnpm build",
+    "start": "cd backend && pnpm start",
+    "install:all": "pnpm install && cd backend && pnpm install && cd ../frontend && pnpm install",
+    "db:setup": "cd backend && pnpm db:generate && pnpm db:push"
   },
-  "dependencies": {
-    "astro": "^5.13.5",
-    "@anthropic-ai/sdk": "^0.30.1"
+  "keywords": ["news", "finance", "typescript", "react", "nodejs", "mysql"],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
