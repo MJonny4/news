@@ -61,7 +61,7 @@ A modern, scalable news aggregation platform built with TypeScript, Node.js, Rea
 ### 1. Database Setup
 ```bash
 # Import the database schema
-mysql -u mjonny4 -p financial_news_hub < database/schema.sql
+mysql -u <username> -p financial_news_hub < database/schema.sql
 ```
 
 ### 2. Backend Setup
@@ -100,7 +100,7 @@ The frontend will be available at `http://localhost:5173`
 The backend uses the following environment variables (already configured in `/backend/.env`):
 
 ```env
-DATABASE_URL="mysql://mjonny4:mjonny4@localhost:3306/financial_news_hub"
+DATABASE_URL="mysql://<username>:<password>@localhost:3306/financial_news_hub"
 PORT=3001
 NODE_ENV=development
 
