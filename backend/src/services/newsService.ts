@@ -2,8 +2,15 @@ import axios, { AxiosResponse } from 'axios';
 import { prisma } from '@/config/database';
 import { NewsAPIArticle, GuardianArticle, AlphaVantageArticle, NewsType } from '@/types';
 import { AppError } from '@/middleware/errorHandler';
+import { AIService } from './aiService';
 
 export class NewsService {
+  private aiService: AIService;
+
+  constructor() {
+    this.aiService = new AIService();
+  }
+
   private static readonly API_CONFIGS = {
     newsapi: {
       baseUrl: 'https://newsapi.org/v2',
@@ -78,6 +85,11 @@ export class NewsService {
     const apiKey = process.env.NEWSAPIORG;
     if (!apiKey) throw new AppError('NewsAPI key not configured', 500);
 
+    // Get date from 30 days ago for filtering recent articles
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const fromDate = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
     const endpoint = newsType === NewsType.FINANCIAL ? 'everything' : 'top-headlines';
     const params: any = {
       apiKey,
@@ -88,9 +100,11 @@ export class NewsService {
     if (newsType === NewsType.FINANCIAL) {
       params.q = `${keyword} AND (finance OR financial OR economy OR market OR business)`;
       params.sortBy = 'publishedAt';
+      params.from = fromDate; // Only get articles from last 30 days
     } else {
       params.q = keyword;
       params.category = newsType === NewsType.GENERAL ? 'general' : undefined;
+      // For top-headlines, we don't set 'from' as it only returns recent articles by default
     }
 
     const response: AxiosResponse = await axios.get(
@@ -113,12 +127,18 @@ export class NewsService {
     const apiKey = process.env.THEGUARDIANOPENPLATFORM;
     if (!apiKey) throw new AppError('Guardian API key not configured', 500);
 
+    // Get date from 30 days ago for filtering recent articles
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const fromDate = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
     const params: any = {
       'api-key': apiKey,
       q: keyword,
       'page-size': pageSize,
       'show-fields': 'headline,bodyText,thumbnail,byline',
       'order-by': 'newest',
+      'from-date': fromDate, // Only get articles from last 30 days
     };
 
     if (newsType === NewsType.FINANCIAL) {
@@ -169,7 +189,15 @@ export class NewsService {
       throw new AppError(`Alpha Vantage API error: ${response.data.Information}`, 400);
     }
 
-    return response.data.feed || [];
+    // Filter articles to only include those from last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const articles = response.data.feed || [];
+    return articles.filter((article: AlphaVantageArticle) => {
+      const publishedDate = new Date(article.time_published.slice(0, 8)); // Format: YYYYMMDDTHHMMSS -> YYYYMMDD
+      return publishedDate >= thirtyDaysAgo;
+    });
   }
 
   private async saveArticles(
@@ -184,7 +212,8 @@ export class NewsService {
       try {
         const normalizedArticle = this.normalizeArticle(article, sourceId, keyword, newsType);
         
-        await prisma.article.upsert({
+        // Create/update the article first
+        const savedArticle = await prisma.article.upsert({
           where: {
             unique_article: {
               externalId: normalizedArticle.externalId || '',
@@ -202,6 +231,12 @@ export class NewsService {
           },
           create: normalizedArticle,
         });
+
+        // Enhance with AI if content is available and not already enhanced
+        if (savedArticle.content && !savedArticle.isEnhanced) {
+          this.enhanceArticleWithAI(savedArticle.id, savedArticle.title, savedArticle.content)
+            .catch(error => console.error(`Error enhancing article ${savedArticle.id}:`, error));
+        }
         
         savedCount++;
       } catch (error) {
@@ -210,6 +245,27 @@ export class NewsService {
     }
 
     return savedCount;
+  }
+
+  private async enhanceArticleWithAI(articleId: number, title: string, content: string): Promise<void> {
+    try {
+      const summaryResult = await this.aiService.summarizeArticle(title, content);
+      
+      if (summaryResult) {
+        await prisma.article.update({
+          where: { id: articleId },
+          data: {
+            aiSummary: summaryResult.summary,
+            keyPoints: summaryResult.keyPoints,
+            richContent: summaryResult.richTextSummary,
+            isEnhanced: true,
+          },
+        });
+        console.log(`Enhanced article ${articleId} with AI`);
+      }
+    } catch (error) {
+      console.error(`Failed to enhance article ${articleId}:`, error);
+    }
   }
 
   private normalizeArticle(article: any, sourceId: number, keyword: string, newsType: NewsType) {
@@ -225,6 +281,7 @@ export class NewsService {
         externalId: this.generateId(article.url),
         title: article.title,
         description: article.description,
+        content: article.content,
         url: article.url,
         publishedAt: new Date(article.publishedAt),
         author: article.author,

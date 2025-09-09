@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { PlayCircleIcon } from '@heroicons/react/24/outline';
+import { 
+  PlayCircleIcon, 
+  SparklesIcon,
+  MagnifyingGlassIcon,
+  ClockIcon,
+  ExclamationTriangleIcon 
+} from '@heroicons/react/24/outline';
 import { CreateFetchJobRequest, NewsType } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -15,6 +21,7 @@ interface NewsFetchFormProps {
 
 export const NewsFetchForm: React.FC<NewsFetchFormProps> = ({ onSubmit, loading }) => {
   const { data: sources } = useSources();
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
   const {
     register,
@@ -74,6 +81,12 @@ export const NewsFetchForm: React.FC<NewsFetchFormProps> = ({ onSubmit, loading 
       return;
     }
     
+    // Add to search history
+    const keyword = data.keyword.trim();
+    if (keyword && !searchHistory.includes(keyword)) {
+      setSearchHistory(prev => [keyword, ...prev].slice(0, 10));
+    }
+    
     clearErrors('sourceIds');
     onSubmit(data);
     reset();
@@ -86,143 +99,250 @@ export const NewsFetchForm: React.FC<NewsFetchFormProps> = ({ onSubmit, loading 
   ];
 
   const articlesPerSourceOptions = [
-    { value: 1, label: '1 article' },
-    { value: 3, label: '3 articles' },
-    { value: 5, label: '5 articles' },
-    { value: 10, label: '10 articles' },
-    { value: 15, label: '15 articles' },
-    { value: 20, label: '20 articles' },
+    { value: 5, label: '5 articles per source' },
+    { value: 10, label: '10 articles per source' },
+    { value: 15, label: '15 articles per source' },
+    { value: 20, label: '20 articles per source' }
   ];
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center">
-          <PlayCircleIcon className="w-6 h-6 text-primary-600 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900">Fetch News Articles</h2>
-        </div>
-        <p className="text-sm text-gray-600 mt-1">
-          Configure and start a new article fetching job from your selected news sources.
-        </p>
-      </CardHeader>
-      
-      <CardBody>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          {/* Basic Settings */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="Search Keyword"
-              placeholder="e.g., Bitcoin, AI, Stock Market"
-              error={errors.keyword?.message}
-              {...register('keyword', { 
-                required: 'Keyword is required',
-                minLength: { value: 2, message: 'Keyword must be at least 2 characters' }
-              })}
-            />
-            
-            <Select
-              label="News Type"
-              options={newsTypeOptions}
-              error={errors.newsType?.message}
-              {...register('newsType', { required: 'News type is required' })}
-            />
-            
-            <Select
-              label="Articles per Source"
-              options={articlesPerSourceOptions}
-              error={errors.articlesPerSource?.message}
-              {...register('articlesPerSource', { 
-                required: 'Articles per source is required',
-                valueAsNumber: true 
-              })}
-            />
-          </div>
+  // Quick search suggestions
+  const quickSearchTerms = [
+    'artificial intelligence',
+    'cryptocurrency', 
+    'climate change',
+    'technology',
+    'business',
+    'healthcare',
+    'finance',
+    'science'
+  ];
 
-          {/* Source Selection */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-gray-700">
-                News Sources {selectedSources?.length > 0 && `(${selectedSources.length} selected)`}
-              </label>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={selectAllSources}
-                  disabled={!sources?.length}
-                >
-                  Select All
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={clearAllSources}
-                  disabled={!selectedSources?.length}
-                >
-                  Clear All
-                </Button>
-              </div>
+  const activeSources = sources?.filter(source => source.isActive) || [];
+
+  return (
+    <div className="space-y-6">
+      {/* API Limits Warning */}
+      <Card className="border-amber-200 bg-amber-50">
+        <CardBody>
+          <div className="flex items-start space-x-3">
+            <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <h3 className="font-medium text-amber-800 mb-1">API Rate Limits Apply</h3>
+              <p className="text-amber-700">
+                This creates a news fetch that gathers articles from external APIs in the background.
+                To avoid hitting rate limits, each search is processed as a separate fetch.
+              </p>
             </div>
-            
-            {sources && sources.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sources.map((source) => (
-                  <div
-                    key={source.id}
-                    className={`relative flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedSources?.includes(source.id)
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    } ${!source.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={() => source.isActive && toggleSource(source.id)}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedSources?.includes(source.id) || false}
-                      onChange={() => source.isActive && toggleSource(source.id)}
-                      disabled={!source.isActive}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    />
-                    <div className="ml-3 flex-1 min-w-0">
-                      <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                        {source.name}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Enhanced Main Form */}
+      <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-6 border border-primary-100 shadow-sm">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-2 flex items-center justify-center">
+              <SparklesIcon className="w-6 h-6 mr-2 text-primary-600" />
+              Create New Fetch
+            </h2>
+            <p className="text-gray-600 text-sm">Search across multiple news sources to find and fetch the latest articles</p>
+          </div>
+          
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+            {/* Main Search Input */}
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-6 w-6 text-gray-400 group-hover:text-primary-500 transition-colors" />
+              </div>
+              
+              <Input
+                placeholder="Enter keywords or topics to search for (e.g., 'artificial intelligence', 'climate change')..."
+                className="pl-14 pr-4 py-4 text-lg rounded-xl border-gray-200 focus:border-primary-300 focus:ring-2 focus:ring-primary-100 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200"
+                error={errors.keyword?.message}
+                {...register('keyword', { 
+                  required: 'Keyword is required',
+                  minLength: { value: 2, message: 'Keyword must be at least 2 characters' }
+                })}
+              />
+            </div>
+
+            {/* Search Options */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* News Type Selection */}
+              <div className="group">
+                <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 p-4">
+                  <div className="flex items-center mb-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
+                    <h3 className="text-sm font-semibold text-gray-800">News Type</h3>
+                  </div>
+                  <Select
+                    options={newsTypeOptions}
+                    className="bg-white border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 rounded-lg shadow-sm"
+                    error={errors.newsType?.message}
+                    {...register('newsType', { required: 'News type is required' })}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Choose the type of news content to search for</p>
+                </div>
+              </div>
+              
+              {/* Articles Count Selection */}
+              <div className="group">
+                <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 p-4">
+                  <div className="flex items-center mb-3">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
+                    <h3 className="text-sm font-semibold text-gray-800">Article Count</h3>
+                  </div>
+                  <Select
+                    options={articlesPerSourceOptions}
+                    className="bg-white border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 rounded-lg shadow-sm"
+                    error={errors.articlesPerSource?.message}
+                    {...register('articlesPerSource', { 
+                      required: 'Articles per source is required',
+                      valueAsNumber: true 
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Number of articles to fetch from each source</p>
+                </div>
+              </div>
+
+              {/* Sources Selection */}
+              <div className="group">
+                <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 p-4">
+                  <div className="flex items-center mb-3">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full mr-3"></div>
+                    <h3 className="text-sm font-semibold text-gray-800">
+                      News Sources 
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary-100 text-primary-700 ml-2">
+                        {activeSources.length} active
+                      </span>
+                    </h3>
+                  </div>
+                  
+                  <div className="flex justify-between mb-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={selectAllSources}
+                      disabled={!activeSources.length}
+                      className="text-xs"
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={clearAllSources}
+                      disabled={!selectedSources?.length}
+                      className="text-xs"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg border border-gray-200 p-3 max-h-32 overflow-y-auto">
+                    <div className="space-y-2.5">
+                      <label className="flex items-center group/checkbox cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={(selectedSources?.length || 0) === 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setValue('sourceIds', []);
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-2 transition-colors"
+                        />
+                        <span className="ml-3 text-sm text-gray-800 font-medium group-hover/checkbox:text-primary-700 transition-colors">
+                          All active sources
+                        </span>
                       </label>
-                      <p className="text-xs text-gray-500">
-                        {source.articleCount || 0} articles • {source.isActive ? 'Active' : 'Inactive'}
-                      </p>
+                      {activeSources.map((source) => (
+                        <label key={source.id} className="flex items-center group/checkbox cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedSources?.includes(source.id) || false}
+                            onChange={() => toggleSource(source.id)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-2 transition-colors"
+                          />
+                          <span className="ml-3 text-sm text-gray-700 group-hover/checkbox:text-primary-700 transition-colors">{source.name}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
-                ))}
+                  <p className="text-xs text-gray-500 mt-2">Select specific sources or use all active ones</p>
+                  {errors.sourceIds && (
+                    <p className="mt-2 text-xs text-red-600">
+                      Please select at least one source
+                    </p>
+                  )}
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                <p>No news sources available</p>
-              </div>
-            )}
-            
-            {errors.sourceIds && (
-              <p className="mt-2 text-sm text-red-600">
-                Please select at least one source
-              </p>
-            )}
-          </div>
+            </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              loading={loading}
-              disabled={!selectedSources?.length}
-              className="min-w-32"
-            >
-              <PlayCircleIcon className="w-4 h-4 mr-2" />
-              Start Fetching
-            </Button>
-          </div>
-        </form>
-      </CardBody>
-    </Card>
+            {/* Submit Button */}
+            <div className="flex justify-center">
+              <Button
+                type="submit"
+                size="lg"
+                loading={loading}
+                disabled={!selectedSources?.length || !activeSources.length}
+                className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <SparklesIcon className="w-5 h-5 mr-2" />
+                {loading ? 'Creating Fetch...' : 'Create & Start Fetch'}
+              </Button>
+            </div>
+
+            {/* Quick Search Suggestions */}
+            <div className="flex flex-wrap items-center gap-2 justify-center text-sm">
+              <span className="text-gray-500 font-medium">Quick searches:</span>
+              {quickSearchTerms.map((term) => (
+                <button
+                  key={term}
+                  type="button"
+                  onClick={() => setValue('keyword', term)}
+                  className="px-3 py-1 rounded-full bg-white/60 hover:bg-white text-gray-600 hover:text-primary-700 border border-gray-200 hover:border-primary-300 transition-all duration-150 capitalize"
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Search History */}
+      {searchHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <ClockIcon className="w-5 h-5 mr-2" />
+              Recent Searches
+            </h3>
+          </CardHeader>
+          <CardBody>
+            <div className="flex flex-wrap gap-2">
+              {searchHistory.map((term, index) => (
+                <button
+                  key={index}
+                  onClick={() => setValue('keyword', term)}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-primary-100 hover:text-primary-700 transition-colors"
+                >
+                  {term}
+                </button>
+              ))}
+              <button
+                onClick={() => setSearchHistory([])}
+                className="inline-flex items-center px-3 py-1 rounded-full text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Clear history
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+    </div>
   );
 };

@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   PlayCircleIcon, 
   ClockIcon,
-  FunnelIcon 
+  FunnelIcon,
+  SparklesIcon,
+  NewspaperIcon,
+  PlusIcon 
 } from '@heroicons/react/24/outline';
 import { NewsFetchForm } from '@/components/NewsFetchForm';
 import { FetchJobCard } from '@/components/FetchJobCard';
@@ -73,21 +77,14 @@ export const FetchJobs: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fetch Jobs</h1>
-          <p className="text-gray-600 mt-1">
-            Create and monitor news article fetching jobs from multiple sources.
-          </p>
-        </div>
-        
-        <Button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="flex items-center"
-        >
-          <PlayCircleIcon className="w-5 h-5 mr-2" />
-          New Fetch Job
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+          <SparklesIcon className="w-8 h-8 mr-3 text-primary-600" />
+          Fetch News
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Create and monitor news fetching processes from multiple sources. Each fetch searches for recent articles and adds them to your database.
+        </p>
       </div>
 
       {/* Stats Cards */}
@@ -144,7 +141,7 @@ export const FetchJobs: React.FC = () => {
               <PlayCircleIcon className="h-8 w-8 text-primary-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Jobs</p>
+              <p className="text-sm font-medium text-gray-500">Total Fetches</p>
               <p className="text-2xl font-bold text-gray-900">
                 {formatNumber(pagination?.total || 0)}
               </p>
@@ -154,13 +151,10 @@ export const FetchJobs: React.FC = () => {
       </div>
 
       {/* Create Job Form */}
-      {showCreateForm && (
+      {showCreateForm ? (
         <div className="space-y-4">
-          <NewsFetchForm
-            onSubmit={handleCreateJob}
-            loading={createJobMutation.isPending}
-          />
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Create New Fetch</h2>
             <Button
               variant="outline"
               onClick={() => setShowCreateForm(false)}
@@ -168,48 +162,165 @@ export const FetchJobs: React.FC = () => {
               Cancel
             </Button>
           </div>
+          <NewsFetchForm
+            onSubmit={handleCreateJob}
+            loading={createJobMutation.isPending}
+          />
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <Button
+            onClick={() => setShowCreateForm(true)}
+            size="lg"
+            className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <PlusIcon className="w-5 h-5 mr-2" />
+            Create New Fetch
+          </Button>
         </div>
       )}
 
       {/* Filters */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <FunnelIcon className="w-5 h-5 text-gray-400 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">Filter Jobs</h3>
-            </div>
-            
-            {statusFilter && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setStatusFilter('')}
-              >
-                Clear Filter
-              </Button>
-            )}
+          <div className="flex items-center">
+            <FunnelIcon className="w-5 h-5 text-gray-400 mr-2" />
+            <h3 className="text-lg font-semibold text-gray-900">Filter Fetches</h3>
           </div>
         </CardHeader>
         
         <CardBody>
-          <div className="flex items-center space-x-4">
-            <div className="flex-1 max-w-xs">
-              <Select
-                label="Status"
-                options={statusOptions}
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              />
+          <div className="space-y-4">
+            {/* Status Filter Buttons */}
+            <div className="flex flex-wrap gap-3">
+              {statusOptions.map((option) => {
+                const isActive = statusFilter === option.value;
+                const getStatusColor = () => {
+                  switch (option.value) {
+                    case FetchStatus.PENDING:
+                      return isActive 
+                        ? 'bg-blue-100 text-blue-800 border-blue-300 ring-2 ring-blue-200' 
+                        : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100';
+                    case FetchStatus.RUNNING:
+                      return isActive 
+                        ? 'bg-yellow-100 text-yellow-800 border-yellow-300 ring-2 ring-yellow-200' 
+                        : 'bg-yellow-50 text-yellow-600 border-yellow-200 hover:bg-yellow-100';
+                    case FetchStatus.COMPLETED:
+                      return isActive 
+                        ? 'bg-green-100 text-green-800 border-green-300 ring-2 ring-green-200' 
+                        : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100';
+                    case FetchStatus.FAILED:
+                      return isActive 
+                        ? 'bg-red-100 text-red-800 border-red-300 ring-2 ring-red-200' 
+                        : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100';
+                    default:
+                      return isActive 
+                        ? 'bg-gray-100 text-gray-800 border-gray-300 ring-2 ring-gray-200' 
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50';
+                  }
+                };
+                
+                const getStatusIcon = () => {
+                  switch (option.value) {
+                    case FetchStatus.PENDING:
+                      return <div className="w-2 h-2 bg-blue-400 rounded-full"></div>;
+                    case FetchStatus.RUNNING:
+                      return <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>;
+                    case FetchStatus.COMPLETED:
+                      return <div className="w-2 h-2 bg-green-400 rounded-full"></div>;
+                    case FetchStatus.FAILED:
+                      return <div className="w-2 h-2 bg-red-400 rounded-full"></div>;
+                    default:
+                      return <div className="w-2 h-2 bg-gray-400 rounded-full"></div>;
+                  }
+                };
+
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => setStatusFilter(isActive ? '' : option.value)}
+                    className={`
+                      inline-flex items-center px-4 py-2 rounded-lg border font-medium text-sm
+                      transition-all duration-200 transform hover:scale-105 cursor-pointer
+                      ${getStatusColor()}
+                    `}
+                  >
+                    {option.value && getStatusIcon()}
+                    <span className={option.value ? "ml-2" : ""}>{option.label}</span>
+                    {isActive && (
+                      <span className="ml-2 text-xs opacity-75">✕</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            
-            <div className="flex items-center space-x-2 pt-6">
-              {statusFilter && (
-                <Badge variant="primary" size="sm">
-                  Filtered by: {statusOptions.find(opt => opt.value === statusFilter)?.label}
-                </Badge>
-              )}
-            </div>
+
+            {/* Active Filter Display */}
+            {statusFilter && (() => {
+              const getActiveFilterStyle = () => {
+                switch (statusFilter) {
+                  case FetchStatus.PENDING:
+                    return {
+                      bg: 'bg-gradient-to-r from-blue-50 to-blue-100',
+                      border: 'border-blue-200',
+                      text: 'text-blue-800',
+                      button: 'text-blue-600 hover:text-blue-800',
+                      dot: 'bg-blue-500'
+                    };
+                  case FetchStatus.RUNNING:
+                    return {
+                      bg: 'bg-gradient-to-r from-yellow-50 to-yellow-100',
+                      border: 'border-yellow-200',
+                      text: 'text-yellow-800',
+                      button: 'text-yellow-600 hover:text-yellow-800',
+                      dot: 'bg-yellow-500 animate-pulse'
+                    };
+                  case FetchStatus.COMPLETED:
+                    return {
+                      bg: 'bg-gradient-to-r from-green-50 to-green-100',
+                      border: 'border-green-200',
+                      text: 'text-green-800',
+                      button: 'text-green-600 hover:text-green-800',
+                      dot: 'bg-green-500'
+                    };
+                  case FetchStatus.FAILED:
+                    return {
+                      bg: 'bg-gradient-to-r from-red-50 to-red-100',
+                      border: 'border-red-200',
+                      text: 'text-red-800',
+                      button: 'text-red-600 hover:text-red-800',
+                      dot: 'bg-red-500'
+                    };
+                  default:
+                    return {
+                      bg: 'bg-gradient-to-r from-gray-50 to-gray-100',
+                      border: 'border-gray-200',
+                      text: 'text-gray-800',
+                      button: 'text-gray-600 hover:text-gray-800',
+                      dot: 'bg-gray-500'
+                    };
+                }
+              };
+              
+              const style = getActiveFilterStyle();
+              
+              return (
+                <div className={`flex items-center justify-between ${style.bg} rounded-lg p-3 border ${style.border}`}>
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-2 h-2 ${style.dot} rounded-full`}></div>
+                    <span className={`${style.text} font-medium text-sm`}>
+                      Showing {statusOptions.find(opt => opt.value === statusFilter)?.label} fetches
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setStatusFilter('')}
+                    className={`${style.button} text-sm font-medium`}
+                  >
+                    Clear Filter
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </CardBody>
       </Card>
@@ -248,23 +359,43 @@ export const FetchJobs: React.FC = () => {
           <Card>
             <CardBody>
               <div className="text-center py-12">
-                <PlayCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
-                  No fetch jobs yet
-                </h3>
-                <p className="mt-2 text-gray-500">
+                <div className="w-16 h-16 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-6">
+                  <SparklesIcon className="w-8 h-8 text-primary-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {statusFilter 
-                    ? `No jobs with status "${statusOptions.find(opt => opt.value === statusFilter)?.label}"` 
-                    : 'Create your first fetch job to start gathering news articles.'
+                    ? `No ${statusOptions.find(opt => opt.value === statusFilter)?.label.toLowerCase()} fetches found`
+                    : 'Ready to fetch some news?'
+                  }
+                </h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  {statusFilter 
+                    ? `No fetches with status "${statusOptions.find(opt => opt.value === statusFilter)?.label}" found. Try clearing the filter or create a new fetch.`
+                    : 'Create your first news fetch to start gathering fresh articles from news APIs. Each fetch searches for specific keywords and adds the latest articles to your database.'
                   }
                 </p>
-                {!showCreateForm && (
+                {!showCreateForm && !statusFilter && (
+                  <div className="space-y-4">
+                    <Button
+                      size="lg"
+                      onClick={() => setShowCreateForm(true)}
+                      className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      <PlusIcon className="w-5 h-5 mr-2" />
+                      Create Your First Fetch
+                    </Button>
+                    <div className="text-sm text-gray-500">
+                      Or check your <Link to="/articles" className="text-primary-600 hover:underline font-medium">existing articles</Link>
+                    </div>
+                  </div>
+                )}
+                {statusFilter && (
                   <Button
-                    className="mt-6"
-                    onClick={() => setShowCreateForm(true)}
+                    variant="outline"
+                    onClick={() => setStatusFilter('')}
+                    className="mt-4"
                   >
-                    <PlayCircleIcon className="w-5 h-5 mr-2" />
-                    Create First Job
+                    Clear Filter
                   </Button>
                 )}
               </div>
@@ -296,7 +427,7 @@ export const FetchJobs: React.FC = () => {
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <span className="text-sm text-gray-500">
-                  ({formatNumber(pagination.total)} total jobs)
+                  ({formatNumber(pagination.total)} total fetches)
                 </span>
               </div>
               
@@ -339,6 +470,62 @@ export const FetchJobs: React.FC = () => {
                 >
                   Next
                 </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Help & Tips */}
+      {!showCreateForm && (
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold text-gray-900">How News Fetching Works</h3>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Fetch Lifecycle:</h4>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    <strong>Pending:</strong> Fetch is queued and waiting to start
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-yellow-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    <strong>Running:</strong> Actively fetching articles from news APIs
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-green-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    <strong>Completed:</strong> Successfully gathered all articles
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-red-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    <strong>Failed:</strong> Encountered an error during processing
+                  </li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Tips for better results:</h4>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-primary-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    Use specific keywords like "renewable energy" instead of just "energy"
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-primary-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    Choose "Financial" type for market, stock, or economic topics
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-primary-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    Start with fewer articles per source to avoid API limits
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-primary-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    Fetches only collect articles from the last 30 days for freshness
+                  </li>
+                </ul>
               </div>
             </div>
           </CardBody>

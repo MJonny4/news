@@ -4,8 +4,7 @@ import {
   NewspaperIcon, 
   HomeIcon, 
   CogIcon, 
-  DocumentMagnifyingGlassIcon,
-  PlayCircleIcon 
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
@@ -16,8 +15,7 @@ interface LayoutProps {
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Articles', href: '/articles', icon: NewspaperIcon },
-  { name: 'Search', href: '/search', icon: DocumentMagnifyingGlassIcon },
-  { name: 'Fetch Jobs', href: '/fetch', icon: PlayCircleIcon },
+  { name: 'Fetch News', href: '/fetch', icon: SparklesIcon },
   { name: 'Settings', href: '/settings', icon: CogIcon },
 ];
 

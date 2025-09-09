@@ -56,6 +56,9 @@ model Article {
   newsType    NewsType  @default(general) @map("news_type")
   imageUrl    String?   @map("image_url") @db.VarChar(500)
   isEnhanced  Boolean   @default(false) @map("is_enhanced")
+  aiSummary   String?   @map("ai_summary") @db.Text
+  keyPoints   Json?     @map("key_points") // Array of key points
+  richContent String?   @map("rich_content") @db.LongText // HTML formatted content
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 

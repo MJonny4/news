@@ -7,7 +7,6 @@ import { Dashboard } from './pages/Dashboard';
 import { FetchJobs } from './pages/FetchJobs';
 import { Articles } from './pages/Articles';
 import { ArticleDetail } from './pages/ArticleDetail';
-import { Search } from './pages/Search';
 import { Settings } from './pages/Settings';
 
 // Create a client
@@ -35,7 +34,6 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/articles" element={<Articles />} />
             <Route path="/articles/:id" element={<ArticleDetail />} />
-            <Route path="/search" element={<Search />} />
             <Route path="/fetch" element={<FetchJobs />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

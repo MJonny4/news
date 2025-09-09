@@ -90,7 +90,7 @@ export const Dashboard: React.FC = () => {
                 <ChartBarIcon className="h-8 w-8 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Running Jobs</p>
+                <p className="text-sm font-medium text-gray-500">Running Fetches</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {jobsLoading ? '...' : runningJobs.length}
                 </p>
@@ -167,7 +167,7 @@ export const Dashboard: React.FC = () => {
       {/* Recent Fetch Jobs */}
       <Card>
         <CardHeader>
-          <h3 className="text-lg font-semibold text-gray-900">Recent Fetch Jobs</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Recent News Fetches</h3>
         </CardHeader>
         <CardBody>
           {jobsLoading ? (
@@ -195,7 +195,7 @@ export const Dashboard: React.FC = () => {
                         {job.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-gray-600 mt-1">
                       {job.status === FetchStatus.COMPLETED && `${job.articlesFetched} articles fetched`}
                       {job.status === FetchStatus.RUNNING && 'In progress...'}
                       {job.status === FetchStatus.FAILED && job.errorMessage}
@@ -205,7 +205,7 @@ export const Dashboard: React.FC = () => {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No fetch jobs yet</p>
+            <p className="text-sm text-gray-500">No news fetches yet</p>
           )}
         </CardBody>
       </Card>

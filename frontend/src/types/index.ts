@@ -65,6 +65,9 @@ export interface Article {
     newsType: NewsType;
     imageUrl: string | null;
     isEnhanced: boolean;
+    aiSummary?: string | null;
+    keyPoints?: string[] | null;
+    richContent?: string | null;
     createdAt: string;
     updatedAt: string;
     source: {
