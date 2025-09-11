@@ -14,6 +14,8 @@ import {
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { TextToSpeech } from '@/components/TextToSpeech';
+import { AdvancedTextToSpeech } from '@/components/AdvancedTextToSpeech';
 import { useArticle, useDeleteArticle } from '@/hooks/useArticles';
 import { formatRelativeDate, formatDate, getNewsTypeColor } from '@/utils/formatters';
 
@@ -107,6 +109,7 @@ export const ArticleDetail: React.FC = () => {
         </Link>
         
         <div className="flex items-center space-x-2">
+          
           <Button
             size="sm"
             variant="outline"
@@ -217,7 +220,9 @@ export const ArticleDetail: React.FC = () => {
       {/* Article Content */}
       <Card>
         <CardHeader>
-          <h2 className="text-xl font-semibold text-gray-900">Article Content</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Article Content</h2>
+          </div>
         </CardHeader>
         <CardBody>
           {article.content ? (
@@ -278,6 +283,15 @@ export const ArticleDetail: React.FC = () => {
           </div>
         </CardBody>
       </Card>
+
+      {/* Advanced Text-to-Speech Player */}
+      <AdvancedTextToSpeech 
+        article={article}
+        showQueue={true}
+        showProgress={true}
+        compact={false}
+        className="sticky bottom-4"
+      />
 
       {/* Related Articles Section - Could be implemented later */}
       <Card>

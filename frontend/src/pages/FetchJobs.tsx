@@ -489,19 +489,19 @@ export const FetchJobs: React.FC = () => {
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li className="flex items-start">
                     <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                    <strong>Pending:</strong> Fetch is queued and waiting to start
+                    <strong className='mr-1'>Pending:</strong> Fetch is queued and waiting to start
                   </li>
                   <li className="flex items-start">
                     <span className="w-2 h-2 bg-yellow-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                    <strong>Running:</strong> Actively fetching articles from news APIs
+                    <strong className='mr-1'>Running:</strong> Actively fetching articles from news APIs
                   </li>
                   <li className="flex items-start">
                     <span className="w-2 h-2 bg-green-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                    <strong>Completed:</strong> Successfully gathered all articles
+                    <strong className='mr-1'>Completed:</strong> Successfully gathered all articles
                   </li>
                   <li className="flex items-start">
                     <span className="w-2 h-2 bg-red-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                    <strong>Failed:</strong> Encountered an error during processing
+                    <strong className='mr-1'>Failed:</strong> Encountered an error during processing
                   </li>
                 </ul>
               </div>

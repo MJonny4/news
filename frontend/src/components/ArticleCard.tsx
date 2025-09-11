@@ -119,6 +119,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
                 Original
               </Button>
               
+              
               {article.isEnhanced && (
                 <Badge variant="success" size="sm">
                   Enhanced

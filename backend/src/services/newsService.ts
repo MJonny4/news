@@ -2,13 +2,9 @@ import axios, { AxiosResponse } from 'axios';
 import { prisma } from '@/config/database';
 import { NewsAPIArticle, GuardianArticle, AlphaVantageArticle, NewsType } from '@/types';
 import { AppError } from '@/middleware/errorHandler';
-import { AIService } from './aiService';
 
 export class NewsService {
-  private aiService: AIService;
-
   constructor() {
-    this.aiService = new AIService();
   }
 
   private static readonly API_CONFIGS = {
@@ -232,11 +228,6 @@ export class NewsService {
           create: normalizedArticle,
         });
 
-        // Enhance with AI if content is available and not already enhanced
-        if (savedArticle.content && !savedArticle.isEnhanced) {
-          this.enhanceArticleWithAI(savedArticle.id, savedArticle.title, savedArticle.content)
-            .catch(error => console.error(`Error enhancing article ${savedArticle.id}:`, error));
-        }
         
         savedCount++;
       } catch (error) {
@@ -247,26 +238,6 @@ export class NewsService {
     return savedCount;
   }
 
-  private async enhanceArticleWithAI(articleId: number, title: string, content: string): Promise<void> {
-    try {
-      const summaryResult = await this.aiService.summarizeArticle(title, content);
-      
-      if (summaryResult) {
-        await prisma.article.update({
-          where: { id: articleId },
-          data: {
-            aiSummary: summaryResult.summary,
-            keyPoints: summaryResult.keyPoints,
-            richContent: summaryResult.richTextSummary,
-            isEnhanced: true,
-          },
-        });
-        console.log(`Enhanced article ${articleId} with AI`);
-      }
-    } catch (error) {
-      console.error(`Failed to enhance article ${articleId}:`, error);
-    }
-  }
 
   private normalizeArticle(article: any, sourceId: number, keyword: string, newsType: NewsType) {
     let normalized: any = {
@@ -281,7 +252,7 @@ export class NewsService {
         externalId: this.generateId(article.url),
         title: article.title,
         description: article.description,
-        content: article.content,
+        content: article?.content,
         url: article.url,
         publishedAt: new Date(article.publishedAt),
         author: article.author,
