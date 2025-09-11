@@ -14,8 +14,7 @@ import {
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { TextToSpeech } from '@/components/TextToSpeech';
-import { AdvancedTextToSpeech } from '@/components/AdvancedTextToSpeech';
+import { ArticlePlayer } from '@/components/ArticlePlayer';
 import { useArticle, useDeleteArticle } from '@/hooks/useArticles';
 import { formatRelativeDate, formatDate, getNewsTypeColor } from '@/utils/formatters';
 
@@ -284,12 +283,9 @@ export const ArticleDetail: React.FC = () => {
         </CardBody>
       </Card>
 
-      {/* Advanced Text-to-Speech Player */}
-      <AdvancedTextToSpeech 
+      {/* Article Audio Player */}
+      <ArticlePlayer 
         article={article}
-        showQueue={true}
-        showProgress={true}
-        compact={false}
         className="sticky bottom-4"
       />
 
